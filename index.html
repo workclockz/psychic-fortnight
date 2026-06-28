@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="dark" />
+<title>Fluid</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c3aed'/%3E%3Cstop offset='0.5' stop-color='%23e0218a'/%3E%3Cstop offset='1' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='42' fill='url(%23g)'/%3E%3Cellipse cx='40' cy='46' rx='5' ry='9' fill='%23fff'/%3E%3Cellipse cx='60' cy='46' rx='5' ry='9' fill='%23fff'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ===== Global SVG gradient defs (used by every icon) ===== -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <linearGradient id="iconGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="50%" stop-color="#e0218a"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="iconGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f5b942"/>
+      <stop offset="100%" stop-color="#ff8a3d"/>
+    </linearGradient>
+    <linearGradient id="iconWater" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ===== Animated Liquid Background ===== -->
+<div class="liquid-bg">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+  <div class="blob blob-5"></div>
+  <canvas id="fluidCanvas"></canvas>
+  <div class="grain"></div>
+</div>
+<div class="vignette"></div>
+
+<!-- ===== Toast container ===== -->
+<div id="toastWrap" class="toast-wrap"></div>
+
+<!-- ================= LOGIN SCREEN ================= -->
+<section id="loginScreen" class="screen active">
+  <div class="login-card glass float-in">
+    <div class="logo">
+      <div class="logo-orb"></div>
+      <h1 class="brand">fluid <span>vercel</span></h1>
+
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="key">License Key</button>
+      <button class="tab" data-tab="admin">Admin</button>
+    </div>
+
+    <div class="tab-panel active" id="panel-key">
+      <label class="field-label">Enter your license key</label>
+      <input id="keyInput" class="input liquid-input" type="text" placeholder="XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" maxlength="40" />
+      <button id="keyLoginBtn" class="btn btn-primary liquid-hover">Enter Casino <span class="ic-slot" data-ic="arrow-right"></span></button>
+      <p class="hint">Don't have a key? Ask an admin to generate one.</p>
+    </div>
+
+    <div class="tab-panel" id="panel-admin">
+      <label class="field-label">Admin access key</label>
+      <input id="adminInput" class="input liquid-input" type="password" placeholder="&bull; &bull; &bull; &bull; &bull;" autocomplete="off" maxlength="64" />
+      <button id="adminLoginBtn" class="btn btn-gold liquid-hover">Open Admin Console <span class="ic-slot" data-ic="arrow-right"></span></button>
+      <p class="hint">Authorized personnel only.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ADMIN SCREEN ================= -->
+<section id="adminScreen" class="screen">
+  <header class="topbar glass">
+    <div class="topbar-left">
+      <div class="logo-orb sm"></div>
+      <strong>ADMIN CONSOLE</strong>
+    </div>
+    <div class="topbar-right">
+      <button id="adminLogout" class="btn btn-ghost sm liquid-hover"><span class="ic-slot" data-ic="log-out"></span> Log out</button>
+    </div>
+  </header>
+
+  <div class="admin-wrap">
+    <div class="glass admin-card">
+      <h2>Generate License Key</h2>
+      <div class="form-grid">
+        <div>
+          <label class="field-label">Starting balance ($)</label>
+          <input id="genBalance" class="input liquid-input" type="number" value="100" min="0" max="100000000" />
+        </div>
+        <div>
+          <label class="field-label">Label / owner (optional)</label>
+          <input id="genLabel" class="input liquid-input" type="text" placeholder="e.g. Player One" maxlength="40" />
+        </div>
+        <div>
+          <label class="field-label">Note (optional)</label>
+          <input id="genNote" class="input liquid-input" type="text" placeholder="VIP / test / event" maxlength="60" />
+        </div>
+      </div>
+      <button id="genKeyBtn" class="btn btn-gold liquid-hover"><span class="ic-slot" data-ic="plus"></span> Generate Key</button>
+    </div>
+
+    <div class="glass admin-card">
+      <h2>Command Console</h2>
+      <p class="hint" style="text-align:left">Type <code>help</code> for the full command list.</p>
+      <div id="consoleOut" class="console-out"></div>
+      <div class="console-input-row">
+        <span class="prompt">&rsaquo;</span>
+        <input id="consoleIn" class="console-in" type="text" placeholder="type a command&hellip;" autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="glass admin-card">
+      <div class="card-head">
+        <h2>License Keys</h2>
+        <div class="card-head-actions">
+          <span id="keyCount" class="pill">0 keys</span>
+          <button id="exportKeys" class="btn btn-ghost sm liquid-hover"><span class="ic-slot" data-ic="download"></span> Export</button>
+          <button id="wipeKeys" class="btn btn-danger sm liquid-hover"><span class="ic-slot" data-ic="trash"></span> Wipe All</button>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="keys-table">
+          <thead>
+            <tr><th>Key</th><th>Label</th><th>Balance</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="keysBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="glass admin-card">
+      <div class="card-head">
+        <h2>Leaderboard Manager</h2>
+        <span class="pill">ranked by current balance</span>
+      </div>
+      <p class="hint" style="text-align:left">Remove a player, or replace their name &amp; balance.</p>
+      <div class="table-wrapper">
+        <div class="lb-admin-list" id="adminLbBody"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CASINO SCREEN ================= -->
+<section id="casinoScreen" class="screen">
+  <header class="topbar glass">
+    <div class="topbar-left">
+      <div class="logo-orb sm"></div>
+      <strong class="brand-sm">fluid <span>vercel</span></strong>
+    </div>
+    <div class="topbar-right">
+      <div class="balance-chip" id="balanceChip">
+        <span class="bal-label">BALANCE</span>
+        <span class="bal-val" id="balanceVal">$0.00</span>
+      </div>
+      <button id="walletBtn" class="btn btn-ghost sm liquid-hover" title="Wallet"><span class="ic-slot" data-ic="wallet"></span> Wallet</button>
+      <button id="profileBtn" class="profile-chip liquid-hover" title="Profile">
+        <span class="avatar sm" id="navAvatar"></span><span id="playerTag"></span>
+      </button>
+      <button id="chatToggle" class="btn btn-ghost sm icon-btn liquid-hover" title="Live chat"><span class="ic-slot" data-ic="chat"></span></button>
+
+      <button id="soundToggle" class="btn btn-ghost sm icon-btn liquid-hover" title="Sound effects"><span class="ic-slot" data-ic="volume"></span></button>
+      <button id="casinoLogout" class="btn btn-ghost sm icon-btn liquid-hover" title="Exit"><span class="ic-slot" data-ic="log-out"></span></button>
+    </div>
+  </header>
+
+  <nav class="mainnav glass">
+    <button class="nav-tab active" data-page="home"><span class="ic-slot" data-ic="home"></span> Home</button>
+    <button class="nav-tab" data-page="games"><span class="ic-slot" data-ic="gamepad"></span> Games</button>
+    <button class="nav-tab" data-page="rewards"><span class="ic-slot" data-ic="gift"></span> Rewards</button>
+    <button class="nav-tab" data-page="leaderboard"><span class="ic-slot" data-ic="trophy"></span> Leaderboard</button>
+    <button class="nav-tab" data-page="fair"><span class="ic-slot" data-ic="shield"></span> Provably Fair</button>
+  </nav>
+  <main class="pages-wrap">
+
+    <!-- ========== HOME ========== -->
+    <div class="page active" data-page="home">
+      <div class="hero glass">
+        <div class="hero-glow"></div>
+        <div class="hero-inner">
+          <div class="hero-icons"><span class="ic-slot" data-ic="dice"></span><span class="ic-slot" data-ic="plinko"></span><span class="ic-slot" data-ic="bomb"></span><span class="ic-slot" data-ic="rocket"></span><span class="ic-slot" data-ic="coin"></span><span class="ic-slot" data-ic="slots"></span></div>
+          <h1 class="hero-title brand"><span class="brand-sm"><span>fluid</span></span> <span class="brand-sm"><span>vercel</span></span></h1>
+          <div class="hero-stats"><span id="heroBalance">$0.00</span> <span class="dim">·</span> <span id="heroLevel">Lv 1</span></div>
+          <button class="btn btn-primary liquid-hover" data-page-go="games" style="margin-top:16px"><span class="ic-slot" data-ic="gamepad"></span> Play</button>
+        </div>
+      </div>
+
+      <div class="section-head"><h2>Recent big wins</h2></div>
+      <div class="winners glass" id="recentWinners"></div>
+
+      <div class="section-head"><h2>Your stats</h2></div>
+      <div class="stats-strip glass" id="statsStrip"></div>
+
+      <div class="section-head"><h2>Featured games</h2><button class="link-btn" data-page-go="games">View all →</button></div>
+      <div class="game-cards">
+        <button class="game-card glass liquid-hover" data-game="mines"><div class="gc-icon" data-ic="bomb"></div><span>Mines</span></button>
+        <button class="game-card glass liquid-hover" data-game="plinko"><div class="gc-icon" data-ic="plinko"></div><span>Plinko</span></button>
+        <button class="game-card glass liquid-hover" data-game="crash"><div class="gc-icon" data-ic="rocket"></div><span>Crash</span></button>
+        <button class="game-card glass liquid-hover" data-game="slots"><div class="gc-icon" data-ic="slots"></div><span>Slots</span></button>
+        <button class="game-card glass liquid-hover" data-game="blackjack"><div class="gc-icon" data-ic="blackjack"></div><span>Blackjack</span></button>
+        <button class="game-card glass liquid-hover" data-game="diamonds"><div class="gc-icon" data-ic="gem"></div><span>Diamonds</span></button>
+      </div>
+
+      <div class="section-head"><h2>Top players</h2><button class="link-btn" data-page-go="leaderboard">Full board →</button></div>
+      <div class="glass leaderboard" id="leaderboard"></div>
+    </div>
+
+    <!-- ========== GAMES ========== -->
+    <div class="page" data-page="games">
+      <div class="hub-head"><h2>Choose a game</h2><p class="hint" style="text-align:left">Have fun!</p></div>
+      <div class="game-cards">
+        <button class="game-card glass liquid-hover" data-game="mines"><div class="gc-icon" data-ic="bomb"></div><span>Mines</span></button>
+      <button class="game-card glass liquid-hover" data-game="dice"><div class="gc-icon" data-ic="dice"></div><span>Dice</span></button>
+      <button class="game-card glass liquid-hover" data-game="plinko"><div class="gc-icon" data-ic="plinko"></div><span>Plinko</span></button>
+      <button class="game-card glass liquid-hover" data-game="crash"><div class="gc-icon" data-ic="rocket"></div><span>Crash</span></button>
+      <button class="game-card glass liquid-hover" data-game="coinflip"><div class="gc-icon" data-ic="coin"></div><span>Coin Flip</span></button>
+      <button class="game-card glass liquid-hover" data-game="limbo"><div class="gc-icon" data-ic="limbo"></div><span>Limbo</span></button>
+      <button class="game-card glass liquid-hover" data-game="wheel"><div class="gc-icon" data-ic="wheel"></div><span>Wheel</span></button>
+      <button class="game-card glass liquid-hover" data-game="roulette"><div class="gc-icon" data-ic="target"></div><span>Roulette</span></button>
+      <button class="game-card glass liquid-hover" data-game="slots"><div class="gc-icon" data-ic="slots"></div><span>Slots</span></button>
+      <button class="game-card glass liquid-hover" data-game="keno"><div class="gc-icon" data-ic="keno"></div><span>Keno</span></button>
+      <button class="game-card glass liquid-hover" data-game="hilo"><div class="gc-icon" data-ic="hilo"></div><span>Hi-Lo</span></button>
+      <button class="game-card glass liquid-hover" data-game="tower"><div class="gc-icon" data-ic="tower"></div><span>Tower</span></button>
+      <button class="game-card glass liquid-hover" data-game="blackjack"><div class="gc-icon" data-ic="blackjack"></div><span>Blackjack</span></button>
+      <button class="game-card glass liquid-hover" data-game="baccarat"><div class="gc-icon" data-ic="cards"></div><span>Baccarat</span></button>
+      <button class="game-card glass liquid-hover" data-game="videopoker"><div class="gc-icon" data-ic="cards"></div><span>Video Poker</span></button>
+      <button class="game-card glass liquid-hover" data-game="scratch"><div class="gc-icon" data-ic="scratch"></div><span>Scratch</span></button>
+      <button class="game-card glass liquid-hover" data-game="diamonds"><div class="gc-icon" data-ic="gem"></div><span>Diamonds</span></button>
+      </div>
+    </div>
+
+    <!-- ========== REWARDS ========== -->
+    <div class="page" data-page="rewards">
+      <div class="hub-head"><h2>Rewards</h2></div>
+      <div class="rewards-grid" id="rewardsGrid"></div>
+    </div>
+
+    <!-- ========== LEADERBOARD ========== -->
+    <div class="page" data-page="leaderboard">
+      <div class="hub-head"><h2>Leaderboard</h2><p class="hint" style="text-align:left">Ranked by all-time high balance.</p></div>
+      <div class="glass leaderboard" id="leaderboardFull"></div>
+    </div>
+
+    <!-- ========== PROVABLY FAIR / ABOUT ========== -->
+    <div class="page" data-page="fair">
+      <div class="hub-head"><h2>About</h2></div>
+      <div class="fair-grid">
+        <div class="fair-card glass"><div class="pc-ic" data-ic="shield"></div><h3>Fair odds</h3><p>Every outcome uses your browser's secure random generator. No deposits, no withdrawals.</p></div>
+        <div class="fair-card glass"><div class="pc-ic" data-ic="wallet"></div><h3>Local wallets</h3><p>Balances are stored locally on your device.</p></div>
+        <div class="fair-card glass"><div class="pc-ic" data-ic="info"></div><h3>How it works</h3><p>Sign in with a license key, get a starting balance, and play 17 games. Tip friends and climb the leaderboard.</p></div>
+      </div>
+    </div>
+
+  </main>
+
+
+  <div id="gameStage" class="game-stage">
+    <button id="backToHub" class="btn btn-ghost sm back-btn liquid-hover"><span class="ic-slot" data-ic="arrow-left"></span> Back to games</button>
+    <div id="gameMount"></div>
+  </div>
+</section>
+
+<!-- ================= LIVE CHAT PANEL ================= -->
+<aside id="chatPanel" class="chat-panel glass">
+  <div class="chat-head">
+    <div class="chat-title"><span class="live-dot"></span> Live Chat <span id="chatOnline" class="pill">— online</span></div>
+    <button id="chatClose" class="btn btn-ghost sm icon-btn liquid-hover"><span class="ic-slot" data-ic="x"></span></button>
+  </div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div class="chat-input-row">
+    <input id="chatInput" class="input" type="text" placeholder="Say something&hellip;" maxlength="180" autocomplete="off" />
+    <button id="chatSend" class="btn btn-primary sm icon-btn liquid-hover"><span class="ic-slot" data-ic="arrow-right"></span></button>
+  </div>
+</aside>
+
+<!-- ================= PROFILE MODAL ================= -->
+<div id="profileModal" class="modal-overlay">
+  <div class="modal glass pop-in" style="max-width:460px;text-align:left">
+    <div class="confetti-strip"></div>
+    <button class="modal-x liquid-hover" data-close="profileModal"><span class="ic-slot" data-ic="x"></span></button>
+    <div class="profile-head">
+      <span class="avatar lg" id="profileAvatar"></span>
+      <div>
+        <div class="profile-name" id="profileNameDisp">Player</div>
+        <div class="profile-lvl"><span id="profileLevel" class="pill"><span class="ic-slot" data-ic="star"></span> Lv 1</span> <span id="profileJoined" class="hint" style="margin:0"></span></div>
+      </div>
+    </div>
+    <div class="xp-bar"><div class="xp-fill" id="xpFill"></div><span id="xpText" class="xp-text"></span></div>
+    <label class="field-label">Display name</label>
+    <div class="bet-row">
+      <input id="profileNameInput" class="input liquid-input" type="text" maxlength="18" placeholder="Your username" />
+      <button id="profileSave" class="btn btn-green sm liquid-hover">Save</button>
+    </div>
+    <div class="profile-stats" id="profileStats"></div>
+    <button id="historyBtn" class="btn btn-ghost block liquid-hover" style="margin-top:14px"><span class="ic-slot" data-ic="history"></span> View bet history</button>
+  </div>
+</div>
+
+<!-- ================= WALLET MODAL ================= -->
+<div id="walletModal" class="modal-overlay">
+  <div class="modal glass pop-in" style="max-width:440px">
+    <div class="confetti-strip"></div>
+    <button class="modal-x liquid-hover" data-close="walletModal"><span class="ic-slot" data-ic="x"></span></button>
+    <div class="modal-orb"></div>
+    <h2 class="modal-title">Wallet</h2>
+    <div class="wallet-bal">Balance <strong id="walletBal">$0.00</strong></div>
+    <div class="wallet-actions">
+      <button class="btn btn-green block disabled-svc" disabled><span class="ic-slot" data-ic="download"></span> Deposit</button>
+      <button class="btn btn-gold block disabled-svc" disabled><span class="ic-slot" data-ic="wallet"></span> Withdraw</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= HISTORY MODAL ================= -->
+<div id="histModal" class="modal-overlay">
+  <div class="modal glass pop-in" style="max-width:520px;text-align:left">
+    <button class="modal-x liquid-hover" data-close="histModal"><span class="ic-slot" data-ic="x"></span></button>
+    <h2 class="modal-title" style="text-align:left">Bet History</h2>
+    <div id="histList" class="hist-list"></div>
+  </div>
+</div>
+
+<!-- ================= ANNOUNCEMENT / INTRO MODAL ================= -->
+<div id="introModal" class="modal-overlay">
+  <div class="modal glass pop-in">
+    <div class="confetti-strip"></div>
+    <div class="modal-orb"></div>
+    <h2 class="modal-title">Welcome to <span class="brand-sm">fluid <span>vercel</span></span></h2>
+    <p class="modal-body">You've been credited with a starting balance of
+      <strong class="big-money" id="introBalance">$100.00</strong>
+      to play with. Spin, flip, dive and crash your way to the top of the leaderboard.</p>
+    <ul class="intro-list">
+      <li><span class="li-ic" data-ic="gamepad"></span> 13 fully playable games</li>
+      <li><span class="li-ic" data-ic="wallet"></span> No deposits, no withdrawals</li>
+      <li><span class="li-ic" data-ic="trophy"></span> Beat your personal high score</li>
+    </ul>
+    <button id="introClose" class="btn btn-primary liquid-hover">Let's gamble <span class="ic-slot" data-ic="arrow-right"></span></button>
+  </div>
+</div>
+
+<!-- ================= TIP MODAL ================= -->
+<div id="tipModal" class="modal-overlay">
+  <div class="modal glass pop-in" style="max-width:380px">
+    <div class="confetti-strip"></div>
+    <button class="modal-x liquid-hover" data-close="tipModal"><span class="ic-slot" data-ic="x"></span></button>
+    <div class="modal-orb"></div>
+    <h2 class="modal-title">Send a tip</h2>
+    <p class="modal-body">Tip <strong id="tipName">Player</strong> from your balance of <strong id="tipFrom">$0.00</strong>.</p>
+    <label class="field-label">Amount ($)</label>
+    <input id="tipAmt" class="input liquid-input" type="number" value="5" min="0.01" step="1" />
+    <button id="tipSend" class="btn btn-gold block liquid-hover" style="margin-top:12px"><span class="ic-slot" data-ic="gift"></span> Send tip</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
